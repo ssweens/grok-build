@@ -663,6 +663,10 @@ mod tests {
         assert!(!nfs_record_is_dead(&dest, Some(&backing)));
     }
     #[test]
+    // Monorepo-only: asserts real pin-ref liveness semantics. The OSS sync
+    // stubs pin_exists/delete_pin_ref_gated (no grove daemon), so this test
+    // only runs with the metadata feature, like its siblings.
+    #[cfg(feature = "metadata")]
     fn db_loss_then_source_gc_keeps_pin_via_union_liveness() {
         xai_test_utils::require_git!();
         let tmp = TempDir::new().unwrap();

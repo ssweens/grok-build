@@ -976,7 +976,10 @@ mod tests {
         let path = save_project_workflow(&linked, "safe", &script("safe")).unwrap();
         assert_eq!(
             dunce::canonicalize(path).unwrap(),
-            project.join(".grok/workflows/safe.rhai")
+            // Canonicalize both sides: on macOS tempdir() returns /var/folders (a
+            // symlink to /private/var), so the left is canonical while the raw
+            // project join is not.
+            dunce::canonicalize(project.join(".grok/workflows/safe.rhai")).unwrap()
         );
     }
 

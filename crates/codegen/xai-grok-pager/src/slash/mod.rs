@@ -11,6 +11,7 @@
 pub mod acp_command;
 pub mod command;
 pub mod commands;
+pub mod extension_adapter;
 pub mod matcher;
 pub mod mode_support;
 pub mod mru;

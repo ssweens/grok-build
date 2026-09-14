@@ -515,6 +515,7 @@ pub const PAGER_COMMAND_KEYS: &[&str] = &[
     "quit",
     "recap",
     "release-notes",
+    "reload",
     "reload-plugins",
     "remember",
     "rename",

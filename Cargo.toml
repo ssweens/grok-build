@@ -95,6 +95,7 @@ members = [
     "crates/common/xai-computer-hub-mcp-adapter",
     "crates/common/xai-computer-hub-sdk",
     "crates/common/xai-grok-compaction",
+    "crates/common/xai-grok-extension-api",
     "crates/common/xai-interjection-core",
     "crates/common/xai-message-delivery-core",
     "crates/common/xai-test-utils",
@@ -107,6 +108,8 @@ members = [
     "third_party/graphlib_rust",
     "third_party/mermaid-to-svg",
     "third_party/ordered_hashmap",
+    "extensions/grok-ext-ollama",
+    "extensions/grok-dynamic-models",
 ]
 
 [workspace.package]

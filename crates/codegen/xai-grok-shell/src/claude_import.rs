@@ -1505,6 +1505,9 @@ mod tests {
     #[serial]
     fn gate_load_claude_env_returns_empty_when_marker_set() {
         let _g = MarkerGuard;
+        // The gate in xai-grok-workspace reads the env-var override (cross-crate
+        // escape hatch, see is_claude_import_marked there), not the shell marker cache.
+        unsafe { std::env::set_var("_GROK_CLAUDE_MARKER_OVERRIDE", "1") };
         refresh_marker_cache(true);
         let dir = tempfile::tempdir().unwrap();
         let env = xai_grok_workspace::permission::claude_settings::load_claude_env_with_project(

@@ -20,6 +20,7 @@ pub mod attribution;
 
 pub mod bridge;
 pub mod computer;
+pub mod extensions;
 pub mod gitignore;
 pub mod implementations;
 pub mod mcp_elicitation;

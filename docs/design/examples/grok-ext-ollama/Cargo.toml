@@ -1,0 +1,12 @@
+[package]
+name = "grok-ext-ollama"
+version = "0.1.0"
+edition = "2024"
+description = "Grok Build extension: Ollama provider + list-models tool + safety hook"
+
+[dependencies]
+xai-grok-extension-api = { path = "../../../../../xai-grok-extension-api" }
+reqwest = { version = "0.12", features = ["json"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+schemars = "1"

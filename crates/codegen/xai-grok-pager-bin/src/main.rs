@@ -120,6 +120,17 @@ fn command_needs_pre_sandbox_policy_heal(command: Option<&Command>) -> bool {
 }
 use std::env;
 use xai_grok_update::{UpdateConfig, auto_update, enforce_version_policy_or_exit};
+
+// Force linker to include extension crates so their #[ctor] functions run at startup.
+// These references are never called but ensure the crates are linked.
+#[allow(dead_code)]
+fn _ensure_extensions_linked() {
+    // Reference something from each extension crate to force linking
+    let _ = grok_ext_ollama::OllamaListModelsTool;
+    let _ = grok_dynamic_models::config_path();
+    // Reference the extension API to ensure it's linked
+    let _ = xai_grok_extension_api::collect_providers();
+}
 /// Apply headless args to an existing config, only overriding values that are explicitly set.
 /// Unset args leave the environment defaults in place.
 fn apply_headless_args_to_config(args: &HeadlessArgs, config: &mut AgentConfig) {

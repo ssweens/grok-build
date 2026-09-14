@@ -55,6 +55,17 @@ xai-grok-config = { workspace = true }
 xai-grok-sandbox = { path = "../xai-grok-sandbox", default-features = false }
 xai-grok-extra-ca = { workspace = true }
 
+# Extensions
+xai-grok-extension-api = { path = "../../common/xai-grok-extension-api" }
+grok-ext-ollama = { path = "../../../extensions/grok-ext-ollama" }
+grok-dynamic-models = { path = "../../../extensions/grok-dynamic-models" }
+rustls = { version = "0.23", default-features = false, features = [
+    "ring",
+    "logging",
+    "std",
+    "tls12",
+] }
+
 # Binary hardening: compile-time string + control-flow obfuscation.
 obfstr = { workspace = true }
 cryptify = { workspace = true }

@@ -1,0 +1,28 @@
+[package]
+name = "xai-grok-extension-api"
+version = "0.1.0"
+edition = "2024"
+description = "Public API for grok-build extensions. Thin facade over tool/provider/hook registration."
+license = "Apache-2.0"
+
+[dependencies]
+# Tool traits and runtime types
+xai-tool-runtime = { path = "../../crates/common/xai-tool-runtime" }
+xai-tool-protocol = { path = "../../crates/common/xai-tool-protocol" }
+xai-tool-types = { path = "../../crates/common/xai-tool-types" }
+
+# Tool metadata (ToolKind, ToolNamespace, ToolMetadata trait)
+xai-grok-tools = { path = "../../crates/codegen/xai-grok-tools" }
+
+# Schema generation for tool input types
+schemars = "1"
+
+# Serialization for tool args/output and provider config
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Async tool execution
+async-trait = "0.1"
+
+# Internal sync primitive for pack registries
+parking_lot = "0.12"

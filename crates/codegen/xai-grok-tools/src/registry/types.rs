@@ -569,6 +569,92 @@ impl ToolRegistryBuilder {
             },
         );
     }
+    /// Register an extension tool from the extension API.
+    ///
+    /// This creates a type-erased tool entry that delegates to the
+    /// extension tool registry for execution.
+    pub fn register_extension_tool(
+        &mut self,
+        id: String,
+        description: String,
+        kind: ToolKind,
+        namespace: ToolNamespace,
+        is_read_only: bool,
+        input_schema: serde_json::Value,
+    ) {
+        use crate::types::requirements::Expr;
+        use crate::types::tool_metadata::ToolMetadata;
+
+        let name = format!("{}:{}", namespace, id);
+
+        // Create a minimal ToolMetadata impl for extension tools
+        struct ExtensionToolMeta {
+            _id: String,
+            description: String,
+            kind: ToolKind,
+            namespace: ToolNamespace,
+            is_read_only: bool,
+        }
+
+        impl ToolMetadata for ExtensionToolMeta {
+            fn kind(&self) -> ToolKind {
+                self.kind
+            }
+
+            fn tool_namespace(&self) -> ToolNamespace {
+                self.namespace.clone()
+            }
+
+            fn description_template(&self) -> &str {
+                &self.description
+            }
+
+            fn is_read_only(&self) -> bool {
+                self.is_read_only
+            }
+        }
+
+        let metadata = ExtensionToolMeta {
+            _id: id.clone(),
+            description: description.clone(),
+            kind,
+            namespace: namespace.clone(),
+            is_read_only,
+        };
+
+        self.tools.insert(
+            name,
+            ToolEntry {
+                namespace: namespace.to_string(),
+                id: id.clone(),
+                kind,
+                requires: Expr::True,
+                default_params: serde_json::Value::Object(Default::default()),
+                input_schema,
+                metadata: Box::new(metadata),
+                output_converter: Box::new(|value| {
+                    Ok(crate::types::output::ToolOutput::Dynamic(
+                        crate::types::output::DynamicOutput { value },
+                    ))
+                }),
+                validate_params: Box::new(|_| Ok(())),
+                apply_params: Box::new(|_, _| {}),
+                register_params: Box::new(|_| {}),
+                parse_input: Box::new(|json| {
+                    Ok(crate::types::ToolInput::Dynamic(json))
+                }),
+                register_in_local: Box::new(|_| {}),
+            },
+        );
+
+        tracing::info!(
+            tool_id = id,
+            kind = ?kind,
+            namespace = ?namespace,
+            "registered extension tool"
+        );
+    }
+
     /// Whether this registry knows the fully-qualified tool id
     /// (`"GrokBuild:read_file"`).
     pub fn has_tool_id(&self, id: &str) -> bool {
@@ -691,6 +777,8 @@ impl ToolRegistryBuilder {
         for pack in tool_packs().lock().iter() {
             pack(&mut b);
         }
+        // Register extension tools from xai-grok-extension-api
+        crate::extensions::register_extension_tools(&mut b);
         b
     }
     pub fn with_local_registry(mut self, registry: xai_computer_hub_sdk::LocalRegistry) -> Self {

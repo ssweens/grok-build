@@ -45,6 +45,7 @@ pub mod privacy;
 pub mod queue;
 pub mod recap;
 pub mod release_notes;
+pub mod reload;
 pub mod remember;
 pub mod rename;
 pub mod resume;
@@ -73,7 +74,7 @@ use std::sync::Arc;
 ///
 /// This is the single source of truth for the builtin command set. The registry is constructed from this list.
 pub fn builtin_commands() -> Vec<Arc<dyn SlashCommand>> {
-    vec![
+    let commands: Vec<Arc<dyn SlashCommand>> = vec![
         // The rows the dropdown shows before it scrolls.
         Arc::new(tutorial::TutorialCommand),
         Arc::new(settings_cmd::SettingsCommand),
@@ -144,6 +145,8 @@ pub fn builtin_commands() -> Vec<Arc<dyn SlashCommand>> {
         Arc::new(feedback::FeedbackCommand),
         Arc::new(privacy::PrivacyCommand),
         Arc::new(doctor::DoctorCommand),
+        // Reloads extensions and their contributed commands/tools.
+        Arc::new(reload::ReloadCommand),
         Arc::new(import_claude::ImportClaudeCommand),
         Arc::new(login::LoginCommand),
         Arc::new(logout::LogoutCommand),
@@ -157,7 +160,21 @@ pub fn builtin_commands() -> Vec<Arc<dyn SlashCommand>> {
         Arc::new(scroll_debug::ScrollDebugCommand),
         // Debug toggles: always registered, listed only on debug binaries.
         Arc::new(debug::DebugCommand),
-    ]
+    ];
+
+    // Add extension commands from xai-grok-extension-api
+    let ext_commands = xai_grok_extension_api::collect_commands();
+    for cmd in ext_commands.commands() {
+        let name = cmd.name.clone();
+        let description = cmd.description.clone();
+        tracing::info!(
+            command = name,
+            description = description,
+            "extension command available"
+        );
+    }
+
+    commands
 }
 #[cfg(test)]
 mod tests {

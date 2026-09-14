@@ -342,6 +342,26 @@ pub async fn dispatch_pre_tool_use(
             (None, None) => HookDecision::Allow,
         },
     };
+    let mut decision = decision;
+    // Extension hooks (xai-grok-extension-api) run after the built-in gate
+    // hooks. A hard deny from a built-in hook stands; an extension block
+    // overrides allow/ask/defer.
+    if !matches!(decision, HookDecision::Deny { .. }) {
+        let match_value = envelope.payload.match_value();
+        let ext_decision = xai_grok_extension_api::dispatch_pre_tool_use(
+            match_value.unwrap_or_default(),
+            &serde_json::Value::Null, // Extension hooks get tool name, not full payload
+            std::path::Path::new(&envelope.cwd),
+        );
+        if ext_decision.is_blocked() {
+            let reason = ext_decision.block_reason().unwrap_or("blocked by extension").to_string();
+            tracing::info!(reason = %reason, "extension hook blocked tool call");
+            decision = HookDecision::Deny {
+                reason,
+                hook_name: "extension".to_string(),
+            };
+        }
+    }
     PreToolUseResult {
         decision,
         updated_input: outcome.updated_input,

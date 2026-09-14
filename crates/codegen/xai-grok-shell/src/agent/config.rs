@@ -3299,6 +3299,93 @@ pub(crate) fn resolve_model_list(
         tracing::debug!(count = defaults.len(), "loaded default models");
         resolved.extend(defaults);
     }
+
+    // Add extension provider models from xai-grok-extension-api
+    {
+        let ext_providers = xai_grok_extension_api::collect_providers();
+        for (provider_name, model) in ext_providers.all_models() {
+            let key = format!("{}/{}", provider_name, model.id);
+            let provider = ext_providers.get(provider_name).unwrap();
+            let api_backend = match provider.api_backend {
+                xai_grok_extension_api::provider::ApiBackend::ChatCompletions => {
+                    crate::sampling::ApiBackend::ChatCompletions
+                }
+                xai_grok_extension_api::provider::ApiBackend::Responses => {
+                    crate::sampling::ApiBackend::Responses
+                }
+                xai_grok_extension_api::provider::ApiBackend::Messages => {
+                    crate::sampling::ApiBackend::Messages
+                }
+            };
+            let context_window =
+                std::num::NonZeroU64::new(model.context_window.max(1)).unwrap_or(
+                    std::num::NonZeroU64::new(128_000).unwrap(),
+                );
+            let mut extra_headers = indexmap::IndexMap::new();
+            for (k, v) in &provider.extra_headers {
+                extra_headers.insert(k.clone(), v.clone());
+            }
+            let api_key = provider
+                .auth_env_var
+                .as_ref()
+                .and_then(|env_var| std::env::var(env_var).ok());
+            tracing::info!(
+                provider = provider_name,
+                model = model.id,
+                base_url = provider.base_url,
+                "loaded extension provider model"
+            );
+            resolved.insert(
+                key,
+                ModelEntry {
+                    info: ModelInfo {
+                        id: Some(format!("{}/{}", provider_name, model.id)),
+                        model: model.id.clone(),
+                        model_family: None,
+                        base_url: provider.base_url.clone(),
+                        name: Some(model.name.clone()),
+                        description: None,
+                        max_completion_tokens: model.max_completion_tokens,
+                        temperature: model.temperature,
+                        top_p: model.top_p,
+                        api_backend,
+                        auth_scheme: xai_grok_sampler::AuthScheme::Bearer,
+                        extra_headers,
+                        context_window,
+                        auto_compact_threshold_percent: None,
+                        system_prompt_label: None,
+                        use_concise: false,
+                        agent_type: "grok-build-plan".to_string(),
+                        inference_idle_timeout_secs: None,
+                        max_retries: None,
+                        rate_limit_retry_threshold: None,
+                        subagent_rate_limit_max_attempts: None,
+                        hidden: false,
+                        user_selectable: true,
+                        supported_in_api: true,
+                        reasoning_effort: None,
+                        supports_reasoning_effort: model.reasoning,
+                        reasoning_efforts: vec![],
+                        variants: vec![],
+                        supports_backend_search: false,
+                        compactions_remaining: None,
+                        compaction_at_tokens: None,
+                        show_model_fingerprint: false,
+                        stream_tool_calls: None,
+                        laziness_detector: Default::default(),
+                        query_params: indexmap::IndexMap::new(),
+                        env_http_headers: indexmap::IndexMap::new(),
+                    },
+                    api_key,
+                    env_key: None,
+                    auth_provider: None,
+                    api_base_url: None,
+                    mtls_cert_dir: None,
+                },
+            );
+        }
+    }
+
     if let Some(mut prefetched) = prefetched {
         tracing::debug!(count = prefetched.len(), "loaded prefetched models");
         let default_cw = DEFAULT_CONTEXT_WINDOW;

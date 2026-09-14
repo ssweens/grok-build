@@ -318,7 +318,10 @@ mod tests {
             serde_json::to_vec(&decoy_marker).unwrap(),
         )
         .unwrap();
-        crate::nfs::confined::tests::plant_journal(&data, victim_id, &victim_backing, None);
+        // NOTE: upstream monorepo plants a journal row here via
+        // confined::tests::plant_journal, but that module (and the journal
+        // reader) was not synced to OSS; try_nfs_remove in this tree is
+        // marker/mount-table based and never consults the journal.
         let _env = crate::nfs::GROVE_ENV_LOCK
             .lock()
             .unwrap_or_else(|e| e.into_inner());

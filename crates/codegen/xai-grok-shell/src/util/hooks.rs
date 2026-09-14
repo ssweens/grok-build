@@ -177,7 +177,12 @@ mod tests {
     /// It flows through the real requirements read (`hook_config_layers_at`) and the real assembly (`assemble_hooks`).
     /// All three register with `Requirements` provenance, the provenance the disable exemption keys on.
     #[test]
+    #[serial_test::serial]
     fn requirements_layer_pins_hooks_with_requirements_provenance() {
+        // Hermetic home: global discovery probes `<home>/.cursor/hooks.json`, and a real
+        // user file there can fail the strict parse (env-dependent red suite otherwise).
+        let home = tempfile::tempdir().unwrap();
+        let _home = xai_grok_test_support::EnvGuard::set("HOME", home.path().to_str().unwrap());
         let system_dir = tempfile::tempdir().unwrap();
         write_requirements(
             system_dir.path(),
@@ -247,7 +252,11 @@ timeout = 5
     /// The shape: command hooks with `timeout: 5`, `PreToolUse` with `matcher: "*"` and two hooks in one group, and matcher-less lifecycle groups.
     /// The two `PreToolUse` hooks are byte-identical, so both parse but content dedup registers one effective hook.
     #[test]
+    #[serial_test::serial]
     fn enterprise_policy_hooks_shape_registers() {
+        // Hermetic home: see `requirements_layer_pins_hooks_with_requirements_provenance`.
+        let home = tempfile::tempdir().unwrap();
+        let _home = xai_grok_test_support::EnvGuard::set("HOME", home.path().to_str().unwrap());
         let system_dir = tempfile::tempdir().unwrap();
         write_requirements(
             system_dir.path(),
