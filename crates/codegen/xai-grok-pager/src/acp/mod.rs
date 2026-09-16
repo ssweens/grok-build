@@ -862,6 +862,7 @@ mod tests {
             login_label: None,
             has_auth_provider_command: false,
             preferred_method: None,
+            enterprise_login_policy: false,
         });
         let (needs, label, method_id, mode) = startup_auth_metadata(&built.methods);
         assert!(

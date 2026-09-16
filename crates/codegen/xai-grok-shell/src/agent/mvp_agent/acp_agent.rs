@@ -428,6 +428,9 @@ impl acp::Agent for MvpAgent {
                 login_label: login_label.as_deref(),
                 has_auth_provider_command: has_auth_provider,
                 preferred_method,
+                // Forced-IdP deployments keep the old login-forced contract
+                enterprise_login_policy: disable_api_key_auth
+                    || self.cfg.borrow().grok_com_config.force_login_team_uuid.is_some(),
             })
         };
         let auth_methods = built.methods;
@@ -925,6 +928,30 @@ impl acp::Agent for MvpAgent {
                 });
                 self.spawn_post_auth_settings(auth);
                 Ok(self.auth_response_with_meta())
+            }
+            auth_method::LOCAL_AUTH_METHOD_ID => {
+                // Fork-local no-account method: accept immediately. No token, no
+                // refresh, no xAI network call; models resolve from
+                // local/extension providers (Ollama, vLLM, ...) with their own
+                // base_url/api_key. Forced-login deployments reject it (defense
+                // in depth; it is not advertised there in the first place).
+                if self.cfg.borrow().grok_com_config.api_key_auth_disabled()
+                    || self.cfg.borrow().grok_com_config.force_login_team_uuid.is_some()
+                {
+                    emit_login_span(false, "local", None, Some("enterprise_login_policy"));
+                    return Err(
+                        acp::Error::auth_required()
+                            .data("interactive login is required by your organization."),
+                    );
+                }
+                self.set_auth_method(arguments.method_id.clone());
+                self.sync_process_static_api_key(None);
+                emit_login_span(true, "local", None, None);
+                log_event(xai_grok_telemetry::events::Login {
+                    auth_method: "local".to_string(),
+                    user_id: None,
+                });
+                Ok(Default::default())
             }
             _ => {
                 Err(
